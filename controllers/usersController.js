@@ -36,13 +36,29 @@ const getUsers = async (req, res) => {
 const updateUser = async (req, res) => {
     let db = mongo.getDb();
     const { id, name, surname, dateOfBirthday, phone, email } = req.body;
+    let d = new Date();
+    let day = new Intl.DateTimeFormat('en', {day: '2-digit'}).format(d);
+    let month = new Intl.DateTimeFormat('en', {month: '2-digit'}).format(d);
+    let year = new Intl.DateTimeFormat('en', {year: 'numeric'}).format(d);
+    let hour = new Intl.DateTimeFormat('en', {hour12: false, hour: '2-digit'}).format(d);
+    let minute = new Intl.DateTimeFormat('en', {minute: '2-digit'}).format(d);
     // Update user in DB
-    await db.collection('users').updateOne({ _id: new ObjectID(id) }, {$set: { name: name, surname: surname, dateOfBirthday: dateOfBirthday, phone: phone, email: email, lastSeen: Date.now() }});
-    // Response
-    res.json({
-        code: 200,
-        status: 'OK'
-    });
+    let result = await db.collection('users').updateOne({ _id: new ObjectID(id) }, {$set: { name: name, surname: surname, dateOfBirthday: dateOfBirthday, phone: phone, email: email, lastSeen: `${day}.${month}.${year} ${hour}:${minute}` }});
+    if (result.result.n === 0) {
+        res.json({
+            code: 404,
+            status: 'Error',
+            error: {
+                errorCode: 404000,
+                errorMessage: 'User not found!'
+            }
+        });
+    } else {
+        res.json({
+            code: 200,
+            status: 'OK'
+        });
+    };
 };
 
 const deleteUser = async (req, res) => {
@@ -70,7 +86,6 @@ const deleteUser = async (req, res) => {
                 }
             });
         } else {
-            // Response
             res.json({
                 code: 200,
                 status: 'OK'
